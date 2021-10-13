@@ -1,5 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const mongoose = require('mongoose');
+
+const Dishes = require('../models/dishes');
 
 const dishRouter = express.Router(); // this will declare dishRouter as an Express router
 
@@ -8,41 +11,51 @@ dishRouter.use(bodyParser.json());
 dishRouter.route('/')
 // dishRouter.route means we are declaring the endpoint at one single location,
 // whereby you can chain all the GET, POST, PUT, DELETE method to this router
-.all((req,res,next) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain'); // here we are modifying the res object
-    next(); // the modification will be carried in the next request function
-}) // app.all means the above code will be executed for all types of request(PUT,POST,DELETE,GET)
-// then it will continue to next
+
 .get((req,res,next) => { // res here is modified res
-    res.end('Will send all the dishes to you!');
+    Dishes.find({})
+    .then((dish) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dish);
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
 .post((req,res,next) => {
-    res.end('Will add the dish: ' + req.body.name + 
-        ' with details: ' + req.body.description);
-        // bodyParser allows us to parse the incoming json request into a javascript object
-        // that's why we are able to call the name and description property here
+    Dishes.create(req.body)
+    .then((dish) => {
+        console.log('Dish Created ', dish);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dish);
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
 .put((req, res, next) => {
     res.statusCode = 403;
     res.end('PUT operation not supported on /dishes');
 })
 .delete((req,res,next) => { // res here is modified res
-    res.end('Deleting all the dishes!');
+    Dishes.remove({})
+    .then((resp) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(resp); // return the response to the client side
+    }, (err) => next(err))
+    .catch((err) => next(err));
 }) // this means the client wants to delete all the dishes information from the server side
 // this is a chain of GET,POST,PUT DELETE MESSAGE
 
 
 dishRouter.route('/:dishId')
-
-.all((req,res,next) => {
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain'); // here we are modifying the res object
-    next(); // the modification will be carried in the next request function
-})
 .get((req,res,next) => { // res here is modified res
-    res.end('Will send details of the dish: '
-        + req.params.dishId + ' to you!');
+    Dishes.findById(req.params.dishId)
+    .then((dish) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dish);
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
 
 .post((req,res,next) => {
@@ -53,13 +66,25 @@ dishRouter.route('/:dishId')
 })
 
 .put((req,res,next) => {
-    res.write('Updating the dish ' + req.params.dishId)
-    res.end('Will update the dish: ' + req.body.name + ' with details: ' +
-        req.body.description);
+    Dishes.findByIdAndUpdate(req.params.dishId, {
+        $set: req.body},
+        {new: true})
+    .then((dish) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dish);
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
 
 .delete((req,res,next) => { // res here is modified res
-    res.end('Deleting dish: ' + req.params.dishId);
+    Dishes.findByIdAndRemove(req.params.dishId)
+    .then((resp) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(resp);
+    }, (err) => next(err))
+    .catch((err) => next(err));
 }); // this means the client wants to delete all the dishes information from the server side
 
 module.exports = dishRouter;
