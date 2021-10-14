@@ -23,6 +23,8 @@ const commentSchema = new Schema({
     }
 }, {
     timestamps: true
+}, { 
+    usePushEach: true
 });
 
 const dishSchema = new Schema({
