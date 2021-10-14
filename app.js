@@ -34,6 +34,44 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+function auth(req,res,next) {
+  console.log(req.headers);
+
+  var authHeader = req.headers.authorization;
+
+  if (!authHeader) { // this means our cliend did not include the username and the password into
+    // the authentication header
+    var err = new Error('You are not authenticated!');
+
+    res.setHeader('WWW-Authenticate', 'Basic');
+    err.status = 401;
+    next(err);
+  }
+
+  var auth = new Buffer(authHeader.split(' ')[1], 'base64').toString().split(':');
+  // the result of the above code will be an array containing a username and password
+  // buffer enables you to split a string value
+  // will split the string into an array, and the first element of the array will be basic
+  // the second element of array will be base64 encoded string
+  // so [1] means we are only looking for the second element in the array
+
+  var username = auth[0];
+  var password = auth[1];
+
+  if (username === 'admin' && password === 'password') {
+    next();
+  }
+  else {
+    var err = new Error('You are not authenticated!');
+
+    res.setHeader('WWW-Authenticate', 'Basic');
+    err.status = 401;
+    next(err);
+  }
+}
+
+app.use(auth); // before the user can access any file from the public folder, we need to authenticate them
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
